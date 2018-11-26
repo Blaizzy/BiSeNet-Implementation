@@ -1,15 +1,16 @@
 # BiSeNet-Implementation
 This repo contains the code for a fierce attempt to implement this amazing Research paper using Keras.
+![Semantic Segmentation on Camvid Dataset](https://github.com/Blaizzy/BiSeNet-Implementation/blob/master/semseg.gif "Semantic Segmentation on Camvid Dataset")
 
 
 Description
 -
 In this repo you will find the all steps necessary to build a Semantic segmentation model.
 You will learn how to do the following:
-    Reading images
-    Image Preprocessing
-    Data pipeline
-    Building the Model
+   - Reading images
+   - Image Preprocessing
+   - Data pipeline
+   - Building the Model
 
 Any suggestions to improve this repository, including any new segmentation models you would like to see are welcome!
 
@@ -28,10 +29,10 @@ The [Preprocessing](https://github.com/Blaizzy/BiSeNet-Implementation/blob/maste
 Model
 -
 The Model notebook is still under development.
+![BiSeNet](https://github.com/Blaizzy/BiSeNet-Implementation/blob/master/bisenet.png "BiSeNet")
 Based on the Bilateral Segmentation Network paper on arxiv:
 https://arxiv.org/abs/1808.00897
 
 So far, only the BiSeNet model is done.
-Difficulties are: 
-
-...* Auxiliary Loss function(softmax). 
+Difficulties are:
+   - Auxiliary Loss function(softmax). 
