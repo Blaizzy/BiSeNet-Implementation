@@ -37,19 +37,19 @@ def conv_act(inputs, n_filters, kernel = (1,1), activation = 'relu', pooling = F
     return conv
 
 
-def CP(layer_13, layer_14):
-
-
+def CP_ARM(layer_13, layer_14):
+    
     # Combine the up-sampled output feature of Global avg pooling and Xception features
     tail_avg = GlobalAveragePooling2D()(layer_14)
     tail_upS = UpSampling2D(size=(2, 2), data_format='channels_last', interpolation='nearest')(layer_14)
     tail = Add()([tail_avg, tail_upS])
+    
+    # ARM
+    ARM_13 = ARM(layer_13, 1024)
+    ARM_14 = ARM(layer_14, 2048)
 
-    layer_13 = ARM(layer_13, 1024)
-    layer_14 = ARM(layer_14, 2048)
-
-    layer_13 = UpSampling2D(size=2, data_format='channels_last', interpolation='nearest')(layer_13)
-    layer_14 = UpSampling2D(size=2, data_format='channels_last', interpolation='nearest')(layer_14)
+    layer_13 = UpSampling2D(size=2, data_format='channels_last', interpolation='nearest')(ARM_13)
+    layer_14 = UpSampling2D(size=2, data_format='channels_last', interpolation='nearest')(ARM_14)
 
     context_features = Concatenate(axis=-1)([layer_14, layer_13])
     context_features = Concatenate(axis=-1)([context_features, tail])
@@ -57,10 +57,12 @@ def CP(layer_13, layer_14):
     context_features = UpSampling2D(size=2, data_format='channels_last', interpolation='nearest')(context_features)
 
     return context_features
-# ARM (Attention Refinement Module)
-# Refines features at each stage of the Context path
 
 def ARM(inputs, n_filters):
+    
+    # ARM (Attention Refinement Module)
+    # Refines features at each stage of the Context path
+    # Negligible computation cost
     arm = AveragePooling2D(pool_size=(1, 1), padding='same', data_format='channels_last')(inputs)
     arm = conv_bn_act(arm, n_filters, (1, 1), activation='sigmoid')
     arm = multiply([inputs, arm])
@@ -68,11 +70,11 @@ def ARM(inputs, n_filters):
     return arm
 
 
-# FFM (Feature Fusion Module)
-# Fuses the low level features of Spatial Path and high level
-# features of Context Path
-
 def FFM(input_sp, input_cp, n_classes):
+    
+    # FFM (Feature Fusion Module)
+    # used to fuse features from the SP & CP
+    # because SP encodes low-level and CP high-level features
     ffm = Concatenate(axis=-1)([input_sp, input_cp])
     conv = conv_bn_act(ffm, n_classes, (3, 3), strides= 2)
 
@@ -86,27 +88,30 @@ def FFM(input_sp, input_cp, n_classes):
 
 
 
-#Model
+# Model (Input & Preprocession)
 inputs = Input(shape=(224,224,3))
 x = Lambda(lambda image: ktf.image.resize_images(image, (224, 224)))(inputs)
 x = Lambda(lambda image: preprocess_input(image))(x)
 
-# Spatial Path
+# Spatial Path (conv_bn_act with strides = 2 )
 SP = conv_bn_act(inputs, 32, strides=2)
 SP = conv_bn_act(SP, 64, strides=2)
 SP = conv_bn_act(SP, 156, strides=2)
 
-
+# Context_path (Xception backbone and Attetion Refinement Module(ARM))
 Xception_model = Xception(weights='imagenet',input_shape= (224,224,3), include_top=False)
 
-# Context_path
+# 16x Down
 layer_13 = Xception_model.get_layer('block13_pool').output
+# 32x Down
 layer_14 = Xception_model.output
+# Context path & ARM
+CP_ARM = CP_ARM(layer_13, layer_14)
 
-CP_features = CP(layer_13, layer_14)
+# Feature Fusion Module(FFM)
+FFM = FFM(SP, CP_ARM, 32)
 
-FFM = FFM(SP, CP_features, 32)
-
+# Upsampling the ouput to normal size
 output = UpSampling2D(size=(16,16), data_format='channels_last', interpolation='nearest')(FFM)
 
 
@@ -114,5 +119,6 @@ bisnet = Model(inputs = [inputs, Xception_model.input], output = [output, layer_
 
 print(bisnet.summary())
 
+# We can visualize if our model was properly configure here 
 from keras.utils import plot_model
 plot_model(bisnet, to_file='model.png')
