@@ -28,7 +28,7 @@ The [Preprocessing](https://github.com/Blaizzy/BiSeNet-Implementation/blob/maste
 
 Model
 -
-The [Model](https://github.com/Blaizzy/BiSeNet-Implementation/blob/master/model.ipynb) notebook is still under development.
+The [Model](https://github.com/Blaizzy/BiSeNet-Implementation/blob/master/model/model.py) is still under development.
 ![BiSeNet](https://github.com/Blaizzy/BiSeNet-Implementation/blob/master/bisenet.png "BiSeNet")
 Based on the Bilateral Segmentation Network paper on arxiv:
 https://arxiv.org/abs/1808.00897
